@@ -3,7 +3,7 @@ import time
 import os
 
 imageIndex = 0
-coords = {'x':1500, 'y':500}
+coords = {'x':0, 'y':0}
 
 #get an array of individual slides for a full animation
 def animArray():
@@ -12,7 +12,7 @@ def animArray():
     while True:
         form = "gif -index " + str(index)
         try:
-            anim.append(PhotoImage(file='C:/Users/Dreality/Pictures/Chimecho_XY.gif', format=form))
+            anim.append(PhotoImage(file='Chimecho_XY.gif', format=form))
             index += 1
         except:
             break;
@@ -69,14 +69,48 @@ def moveDown(num):
     root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
 
 
-#def pathToCoord(destX, destY):
-#    global coords
-#    diffX = coords['x'] - destX
-#    diffY = coords['y'] - destY
-    
+def pathToCoord(destX, destY):
+    global coords
+    diffX = destX - coords['x']
+    diffY = destY - coords['y']
+    funcList = []
+
+    print(diffX, diffY)
+
+    if diffX != 0 and diffY != 0:  #both diffX and diffY has a value other than 0
+        xFunc = moveLeft if diffX < 0 else moveRight
+        yFunc = moveUp if diffY < 0 else moveDown
+
+        if abs(diffX) > abs(diffY):  #x is bigger
+            print('x is bigger')
+            lower = round(diffY/diffX)
+            loopFunc(abs(diffX),[(xFunc,1), (yFunc,lower)])
+        elif abs(diffX) < abs(diffY):  #y is higher
+            print('y is bigger')
+            lower = round(diffX/diffY)
+            loopFunc(abs(diffY),[(xFunc,lower), (yFunc,1)])
+        else:  #both are equal
+            print('both are equal')
+            loopFunc(abs(diffX),[(xFunc,1), (yFunc,1)])
+
+    else:  #one of them are 0
+        if diffX == 0:  #only move y direction
+            print('only move y directio')
+            yFunc = moveUp if diffY < 0 else moveDown
+            loopFunc(abs(diffY),[(yFunc,1)])
+        elif diffY == 0:  #only move x direction
+            print('only move x directio')
+            xFunc = moveLeft if diffX < 0 else moveRight
+            loopFunc(abs(diffX),[(xFunc,1)])
+        else:  #same spot
+            print('same spot')
+
 
 def path():
-    loopFunc(300,[(moveLeft,1), (moveUp,1)])
+    #loopFunc(300,[(moveLeft,1), (moveUp,1)])
+    #pathToCoord(500,500)
+    pathToCoord(350,250)
+    pathToCoord(500,100)
 
 
 root = Tk()
