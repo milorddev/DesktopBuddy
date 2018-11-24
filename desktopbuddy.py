@@ -1,21 +1,26 @@
 from tkinter import *
 import time
 import os
+import random
 
 imageIndex = 0
 coords = {'x':0, 'y':0}
 mouseStart = {'x':0, 'y':0}
 mouseVelocity = {'x':0, 'y':0}
 previousMouse = {'x':0, 'y':0}
+flippedAnim = False
 
 #get an array of individual slides for a full animation
-def animArray():
+def animArray(flipped):
     anim = []
     index = 0
     while True:
         form = "gif -index " + str(index)
         try:
-            anim.append(PhotoImage(file='Chimecho_XY.gif', format=form))
+            if(flipped):
+                anim.append(PhotoImage(file='Chimecho_XY_Flipped.gif', format=form))
+            else:
+                anim.append(PhotoImage(file='Chimecho_XY.gif', format=form))
             index += 1
         except:
             break;
@@ -33,11 +38,14 @@ def animNextFrame(animation):
         return animation[0]
 
 #updates the animation, keep coords in bounds
-def animUpdate():
-    global coords, boundingBox;    
-    frame = animNextFrame(frames)
+def animUpdate(flipped):
+    global coords, boundingBox;
+    if(flipped):
+        frame = animNextFrame(framesFlipped)
+    else:
+        frame = animNextFrame(frames)
     label.configure(image=frame)
-    root.after(32, animUpdate)
+    root.after(32, animUpdate, flippedAnim)
 
 #check the bounding box first, then apply the movement
 def applyPosition():
@@ -58,13 +66,17 @@ def applyPosition():
     root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
 
 #alternative for loop working with tkinter's mainloop thing. takes in the count and whatever function stack you want
-def loopFunc(count, funcList):
+def loopFunc(count, funcList, endFunc):
     if count <= 0:
-        print('end')
+        endFunc()
     else:
         for i in funcList:
             i[0](i[1])
-        root.after(32,loopFunc, count-1, funcList) 
+        root.after(32,loopFunc, count-1, funcList, endFunc)
+
+#blank after loop function
+def printEnd():
+    print('end')
 
 #mouse left click
 def leftMouseStart(e):
@@ -106,19 +118,21 @@ def rightMouseStart(e):
 def rightMouseEnd(e):
     newX = e.x_root - mouseStart['x']
     newY = e.y_root - mouseStart['y']
-    pathToCoord(newX, newY)
+    pathToCoord(newX, newY, printEnd)
 
 #moving left by 1 pixel
 def moveLeft(num):
-    global coords;
+    global coords, flippedAnim;
     coords['x'] -= num;
     applyPosition()
+    flippedAnim = False
 
 #moving right by 1 pixel
 def moveRight(num):
-    global coords;
+    global coords, flippedAnim;
     coords['x'] += num;
     applyPosition()
+    flippedAnim = True
 
 #moving up by 1 pixel
 def moveUp(num):
@@ -133,7 +147,7 @@ def moveDown(num):
     applyPosition()
 
 #find x and y amounts in order to path over to that coordinate
-def pathToCoord(destX, destY):
+def pathToCoord(destX, destY, endFunc):
     global coords
     diffX = destX - coords['x']
     diffY = destY - coords['y']
@@ -148,38 +162,39 @@ def pathToCoord(destX, destY):
         if abs(diffX) > abs(diffY):  #x is bigger
             print('x is bigger')
             lower = round(diffY/diffX)
-            loopFunc(abs(diffX),[(xFunc,1), (yFunc,lower)])
+            loopFunc(abs(diffX),[(xFunc,1), (yFunc,lower)], endFunc)
         elif abs(diffX) < abs(diffY):  #y is higher
             print('y is bigger')
             lower = round(diffX/diffY)
-            loopFunc(abs(diffY),[(xFunc,lower), (yFunc,1)])
+            loopFunc(abs(diffY),[(xFunc,lower), (yFunc,1)], endFunc)
         else:  #both are equal
             print('both are equal')
-            loopFunc(abs(diffX),[(xFunc,1), (yFunc,1)])
+            loopFunc(abs(diffX),[(xFunc,1), (yFunc,1)], endFunc)
 
     else:  #one of them are 0
         if diffX == 0:  #only move y direction
             print('only move y directio')
             yFunc = moveUp if diffY < 0 else moveDown
-            loopFunc(abs(diffY),[(yFunc,1)])
+            loopFunc(abs(diffY),[(yFunc,1)], endFunc)
         elif diffY == 0:  #only move x direction
             print('only move x directio')
             xFunc = moveLeft if diffX < 0 else moveRight
-            loopFunc(abs(diffX),[(xFunc,1)])
+            loopFunc(abs(diffX),[(xFunc,1)], endFunc)
         else:  #same spot
             print('same spot')
 
 
 def path():
+    time.sleep(random.randrange(0,10))
     print('path')
-    #loopFunc(300,[(moveLeft,1), (moveUp,1)])
-    #pathToCoord(500,500)
-    #pathToCoord(350,250)
-    #pathToCoord(500,100)
+    newX = random.randrange(boundingBox['left'],boundingBox['right'])
+    newY = random.randrange(boundingBox['top'],boundingBox['bottom'])
+    pathToCoord(newX, newY, path)
 
 
 root = Tk()
-frames = animArray()
+frames = animArray(False)
+framesFlipped = animArray(True)
 label = Label(root, bg='white')
 boundingBox = {'left': 0, 'right': root.winfo_screenwidth() - 40, 'top': 0, 'bottom': root.winfo_screenheight() - 100}
 
@@ -202,6 +217,6 @@ root.wm_attributes("-transparentcolor", "white")
 
 
 label.pack()
-root.after(0, animUpdate)
+root.after(0, animUpdate, flippedAnim)
 root.after(32,path)
 root.mainloop()
