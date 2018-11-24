@@ -32,11 +32,30 @@ def animNextFrame(animation):
         imageIndex = 0
         return animation[0]
 
-#updates the animation
+#updates the animation, keep coords in bounds
 def animUpdate():
+    global coords, boundingBox;    
     frame = animNextFrame(frames)
     label.configure(image=frame)
     root.after(32, animUpdate)
+
+#check the bounding box first, then apply the movement
+def applyPosition():
+    global coords
+    boundX = coords['x']
+    if coords['x'] < boundingBox['left']:
+        boundX = boundingBox['left']
+    elif coords['x'] > boundingBox['right']:
+        boundX = boundingBox['right']
+
+    boundY = coords['y']
+    if coords['y'] < boundingBox['top']:
+        boundY = boundingBox['top']
+    elif coords['y'] > boundingBox['bottom']:
+        boundY = boundingBox['bottom']
+
+    coords = {'x':boundX, 'y':boundY}
+    root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
 
 #alternative for loop working with tkinter's mainloop thing. takes in the count and whatever function stack you want
 def loopFunc(count, funcList):
@@ -57,11 +76,11 @@ def leftMouseHeld(e):
     global mouseVelocity, previousMouse, coords
     newX = e.x_root - mouseStart['x']
     newY = e.y_root - mouseStart['y']
-    mouseVelocity = {'x':(newX - previousMouse['x'])*2, 'y': (newY - previousMouse['y'])*2}
+    mouseVelocity = {'x':(newX - previousMouse['x'])*3, 'y': (newY - previousMouse['y'])*3}
     coords = {'x':newX, 'y':newY}
     previousMouse = {'x':newX, 'y':newY}
     print(mouseVelocity)
-    root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
+    applyPosition()
 
 #calculate the residual velocity and slow down to stop
 def leftMouseEnd(e):
@@ -71,18 +90,17 @@ def leftMouseEnd(e):
         tracker = tracker/1.61
         mouseVelocity = {'x':round(mouseVelocity['x']/1.61), 'y': round(mouseVelocity['y']/1.61)}
         coords = {'x': coords['x'] + mouseVelocity['x'] , 'y': coords['y'] + mouseVelocity['y']}
-        root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
+        applyPosition()
         root.after(32,leftMouseEnd, e)
     print(e)
 
 #mouse right click
 def rightMouseStart(e):
     mouseStart = {'x':e.x, 'y':e.y}
-    print(e)
 
 #nothing on right drag
-def rightMouseHeld(e):
-    print(e)
+#def rightMouseHeld(e):
+    #print(e)
 
 #start the move to coordinates
 def rightMouseEnd(e):
@@ -94,25 +112,25 @@ def rightMouseEnd(e):
 def moveLeft(num):
     global coords;
     coords['x'] -= num;
-    root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
+    applyPosition()
 
 #moving right by 1 pixel
 def moveRight(num):
     global coords;
     coords['x'] += num;
-    root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
+    applyPosition()
 
 #moving up by 1 pixel
 def moveUp(num):
     global coords;
     coords['y'] -= num;
-    root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
+    applyPosition()
 
 #moving down by 1 pixel
 def moveDown(num):
     global coords;
     coords['y'] += num;
-    root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
+    applyPosition()
 
 #find x and y amounts in order to path over to that coordinate
 def pathToCoord(destX, destY):
@@ -163,6 +181,7 @@ def path():
 root = Tk()
 frames = animArray()
 label = Label(root, bg='white')
+boundingBox = {'left': 0, 'right': root.winfo_screenwidth() - 40, 'top': 0, 'bottom': root.winfo_screenheight() - 100}
 
 #mouse bindings
 label.bind("<Button-1>", leftMouseStart)
@@ -170,7 +189,7 @@ label.bind("<B1-Motion>", leftMouseHeld)
 label.bind("<ButtonRelease-1>", leftMouseEnd)
 
 label.bind("<Button-3>", rightMouseStart)
-label.bind("<B3-Motion>", rightMouseHeld)
+#label.bind("<B3-Motion>", rightMouseHeld)
 label.bind("<ButtonRelease-3>", rightMouseEnd)
 
 
