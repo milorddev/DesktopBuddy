@@ -185,7 +185,6 @@ def pathToCoord(destX, destY, endFunc):
 
 
 def path():
-    time.sleep(random.randrange(0,10))
     print('path')
     newX = random.randrange(boundingBox['left'],boundingBox['right'])
     newY = random.randrange(boundingBox['top'],boundingBox['bottom'])
