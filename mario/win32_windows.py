@@ -1,11 +1,10 @@
 import win32con
 import win32gui
-
 import win32api
 import win32process
 
 def isRealWindow(hWnd):
-    '''Return True iff given window is a real Windows application window.'''
+    '''Return True if given window is a real Windows application window.'''
     if not win32gui.IsWindowVisible(hWnd):
         return False
     if win32gui.GetParent(hWnd) != 0:
@@ -31,11 +30,15 @@ def getWindowSizes():
         proc_name = win32process.GetModuleFileNameEx(handle, 0)
         
         rect = win32gui.GetWindowRect(hWnd)
-        #windows.append((hWnd, (rect[2] - rect[0], rect[3] - rect[1])))
-        windows.append((proc_name,rect))
+        obj = {"process":proc_name, "rect": rect, "topleft": (rect[0],rect[1]), "width": rect[2]-rect[0]}
+        #windows.append((proc_name, (rect[2] - rect[0], rect[3] - rect[1]), rect))
+        #windows.append((proc_name,rect))
+        windows.append(obj)
     windows = []
     win32gui.EnumWindows(callback, windows)
     return windows
 
+'''
 for win in getWindowSizes():
     print(win)
+'''

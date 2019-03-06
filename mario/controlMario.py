@@ -2,6 +2,7 @@ from tkinter import *
 import time
 import os
 import random
+import win32_windows as win
 
 imageIndex = 0
 coords = {'x':0, 'y':0}
@@ -66,6 +67,14 @@ def applyPosition():
         boundY = boundingBox['bottom']
         jumpTrigger = False
 
+    '''
+    wins = win.getWindowSizes()
+    for i in wins:
+        if coords['x'] > i['topleft'][0] and coords['x'] < i['topleft'][0] + i['width']:
+            if coords['y'] > i['topleft'][1] and coords['y'] < i['topleft'][1]+5:
+                print('hitting', i['process'], i['topleft'])
+                    jumpTrigger = False
+    '''
     coords = {'x':boundX, 'y':boundY}
     root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
 
@@ -150,6 +159,8 @@ def moveLoop():
 
 root = Tk()
 
+wins = win.getWindowSizes()
+
 idle = (animArray(False,'idle.gif'), animArray(True, 'idle_Flipped.gif'))
 running = (animArray(False,'running.gif'), animArray(True, 'running_Flipped.gif'))
 jumping = (animArray(False,'jumping.gif'), animArray(True, 'jumping_Flipped.gif'))
@@ -171,7 +182,6 @@ root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
 root.wm_attributes("-topmost", True)
 #root.wm_attributes("-disabled", True)
 root.wm_attributes("-transparentcolor", "white")
-
 
 label.pack()
 label.focus_set()
