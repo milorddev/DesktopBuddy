@@ -1,10 +1,16 @@
 # DesktopBuddy
-A little animated character to hang out on your desktop. Gonna make this one pretty robust
+A little animated character to hang out on your desktop. Gonna make a few versions of this guy
 
 # What he can do right now
 
-You can throw him around, or tell him where to go
+There are two Python scripts: `randomFloaty` and `controlFloaty` inside the `floaty` folder
 
-drag him around with the left mouse, 
+For randomFloaty:
+ - You can throw him around, or tell him where to go
+ - drag him around with the left mouse, 
+ - to command him to go somewhere, right press and drag to another area of the screen, after you release, he will slowly drift in that direction
 
-to command him to go somewhere, right press and drag to anohter area of the screen, after you release, he will slowly drift in that direction
+For controlFloaty:
+ - YOU have control, use the WASD to move him around!
+ - if you click somewhere else, he will just sit there
+ - to control him again, click him, then you can use the keyboard to move him around again
