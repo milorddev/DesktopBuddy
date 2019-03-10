@@ -85,7 +85,7 @@ def get_windows():
             
     enumerated_windows = []
     win32gui.EnumWindows(enum_handler, enumerated_windows)
-    return enumerated_windows #cleanupList(sort_windows(enumerated_windows)) #windows.sort(key=lambda x: x['hwnd'])
+    return cleanupList(sort_windows(enumerated_windows)) #windows.sort(key=lambda x: x['hwnd'])
 
 
 
