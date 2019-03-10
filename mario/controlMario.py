@@ -2,15 +2,19 @@ from tkinter import *
 import time
 import os
 import random
+import math
 import win32_windows as win
 
 imageIndex = 0
 coords = {'x':0, 'y':0}
+prevCoords = {'x':0, 'y':0}
 yVelocity = 0
 flippedAnim = False
 keyObj = {'a':False, 's':False, 'd':False, 'w':False}
-dist = 2
+dist = 6
+interpVal = 0
 jumpTrigger = True
+refreshRate = 32
 
 #get an array of individual slides for a full animation
 def animArray(flipped,fpath):
@@ -49,11 +53,11 @@ def animUpdate(flipped):
     else:
         frame = animNextFrame(currentAnim[0])
     label.configure(image=frame)
-    root.after(64, animUpdate, flippedAnim)
+    root.after(math.ceil(refreshRate * 1.618), animUpdate, flippedAnim)
 
 #check the bounding box first, then apply the movement
-def applyPosition():
-    global coords, jumpTrigger
+def applyPosition(xOverride=0, yOverride=0):
+    global coords, prevCoords, jumpTrigger
     boundX = coords['x']
     if coords['x'] < boundingBox['left']:
         boundX = boundingBox['left']
@@ -67,18 +71,32 @@ def applyPosition():
         boundY = boundingBox['bottom']
         jumpTrigger = False
 
-    '''
-    wins = win.getWindowSizes()
-    for i in wins:
-        if coords['x'] > i['topleft'][0] and coords['x'] < i['topleft'][0] + i['width']:
-            if coords['y'] > i['topleft'][1] and coords['y'] < i['topleft'][1]+5:
-                print('hitting', i['process'], i['topleft'])
-                    jumpTrigger = False
-    '''
-    coords = {'x':boundX, 'y':boundY}
+    detectPlatforms()
+
+    prevCoords = coords
+    coords = {'x':boundX+xOverride, 'y':boundY+yOverride}
     root.geometry("+" + str(coords['x']) + "+" + str(coords['y']))
 
 
+
+def detectPlatforms():
+    global coords, prevCoords, jumpTrigger
+    wins = win.get_windows()
+    #character position, before and current
+    xPos = (prevCoords['x']+8, coords['x']+8)
+    yPos = (prevCoords['y']+32, coords['y']+32)
+    
+    for i in wins:
+        ends = (i['topleft'][0], i['topleft'][0] + i['width'])
+        y = i['topleft'][1]
+
+        if xPos[0] < ends[0] and xPos[1] < ends[0]: #if before the left x of the platform, skip
+            continue
+        elif xPos[0] > ends[1] and xPos[1] > ends[1]: # if after the right x of the platform, skip
+            continue
+        elif y >= yPos[0] and y <= yPos[1]: #we are in the Yrange, make him stand!
+            jumpTrigger = False
+            
 
 #moving left by 1 pixel
 def moveLeft(num):
@@ -102,7 +120,15 @@ def moveUp(num):
 def moveDown(num):
     global coords;
     coords['y'] += num;
-    
+
+def lerp(steps, updown): #eg. 32 steps to get from 0 to 6
+    global interpVal
+    if updown == 'up':
+        interpVal = dist/steps + interpVal if dist/steps + interpVal < dist else dist
+    else:
+        interpVal = interpVal - dist/steps if interpVal - dist/steps > 0 else 0
+    #print(interpVal)
+    return math.ceil(interpVal)
 
 def keyup(e):
     global keyObj
@@ -126,46 +152,50 @@ def keydown(e):
     if charkey == 'w' or charkey == 'W':
         #keyObj['w'] = True
         if jumpTrigger == False:
-            yVelocity = -15
+            yVelocity = -20
             jumpTrigger = True
     if charkey == 's' or charkey == 'S':
         keyObj['s'] = True
 
 def moveLoop():
-    global currentAnim, yVelocity
-    for i in keyObj:
-        if i == 'a' and keyObj[i] == True:
-            moveLeft(dist)
-        if i == 's' and keyObj[i] == True:
-            moveDown(dist)
-        if i == 'd' and keyObj[i] == True:
-            moveRight(dist)
-        if i == 'w' and keyObj[i] == True:
-            moveUp(dist)
-
-    if jumpTrigger == True:
-        currentAnim = jumping
-        moveDown(yVelocity)
-        print(yVelocity)
+    global currentAnim, yVelocity, interpVal
+    if root.focus_get() == None:
+        print('do nothing, not focused')
     else:
-        if keyObj['w'] == False and keyObj['a'] == False and keyObj['s'] == False and keyObj['d'] == False:
-            currentAnim = idle
-        if keyObj['a'] == True or keyObj['d'] == True:
-            currentAnim = running
-        
-    applyPosition()
-    yVelocity += 1
-    root.after(32,moveLoop)
+        for i in keyObj:
+            if i == 'a' and keyObj[i] == True:
+                moveLeft(lerp(8,'up'))
+            if i == 's' and keyObj[i] == True:
+                pass
+            if i == 'd' and keyObj[i] == True:
+                moveRight(lerp(8,'up'))
+            if i == 'w' and keyObj[i] == True:
+                moveUp(lerp(8,'up'))
+
+        if jumpTrigger == True:
+            currentAnim = jumping
+            moveDown(yVelocity)
+        else:
+            if keyObj['w'] == False and keyObj['a'] == False and keyObj['s'] == False and keyObj['d'] == False:
+                currentAnim = idle
+                interpVal = 0
+            if keyObj['s'] == True:
+                currentAnim = crouching
+                interpVal = 0
+            elif keyObj['a'] == True or keyObj['d'] == True:
+                currentAnim = running
+                
+        applyPosition()
+        yVelocity += 2
+    root.after(refreshRate,moveLoop)
 
 root = Tk()
-
-wins = win.getWindowSizes()
 
 idle = (animArray(False,'idle.gif'), animArray(True, 'idle_Flipped.gif'))
 running = (animArray(False,'running.gif'), animArray(True, 'running_Flipped.gif'))
 jumping = (animArray(False,'jumping.gif'), animArray(True, 'jumping_Flipped.gif'))
 crouching = (animArray(False,'crouching.gif'), animArray(True, 'crouching_Flipped.gif'))
-skidding = (animArray(False,'skidding.gif'), animArray(True, 'skidding_Flipped.gif'))
+#skidding = (animArray(False,'skidding.gif'), animArray(True, 'skidding_Flipped.gif'))
 
 currentAnim = idle
 
@@ -186,5 +216,5 @@ root.wm_attributes("-transparentcolor", "white")
 label.pack()
 label.focus_set()
 root.after(0, animUpdate, flippedAnim)
-root.after(32,moveLoop)
+root.after(refreshRate,moveLoop)
 root.mainloop()
